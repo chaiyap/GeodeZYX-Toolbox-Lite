@@ -5118,47 +5118,7 @@ def compare_trop_solu(input_file,STA1,STA2,mode="DF"):
     diff_pd = diff_pd.rename(index=str,columns={"STAT_x":"STAT_ref","STAT_y":"STAT_rov"})
     
     return diff_pd
-    
-def trop_saast(p,dlat,hell,t=0,e=0,mode="dry"):
-    """
-    % This subroutine determines the zenith total delay based on the
-    % equation by Saastamoinen (1972) as refined by Davis et al. (1985)
-    %
-    % c Reference:
-    % Saastamoinen, J., Atmospheric correction for the troposphere and 
-    % stratosphere in radio ranging of satellites. The use of artificial 
-    % satellites for geodesy, Geophys. Monogr. Ser. 15, Amer. Geophys. Union, 
-    % pp. 274-251, 1972.
-    % Davis, J.L, T.A. Herring, I.I. Shapiro, A.E.E. Rogers, and G. Elgered, 
-    % Geodesy by Radio Interferometry: Effects of Atmospheric Modeling Errors 
-    % on Estimates of Baseline Length, Radio Science, Vol. 20, No. 6, 
-    % pp. 1593-1607, 1985.
-    %
-    % input parameters:
-    %
-    % p:     pressure in hPa
-    % dlat:  ellipsoidal latitude in radians 
-    % t   :  temperature in Celcius
-    % e   :  water vapor pressure in hPa
-    % hell:  ellipsoidal height in m 
-    % mode: dry, wet or total
-    % 
-    % output parameters:
-    %
-    % res:  zenith total delay in m (depend on mode) 
-    """
-    f = 1-0.00266*np.cos(2*dlat) - 0.00000028*hell # calculate denominator f
-    t = t + 273.15 #convert celcius to kelvin 
-    if mode == "dry":
-        res = 0.0022768*p/f
-    elif mode == "wet":
-        res = (0.22768e-2) * ((0.1255e+4)+(t+0.5e-1)) * (e/t)
-    elif mode == "total":
-        zhd = 0.0022768*p/f
-        zwd = (0.22768e-2) * ((0.1255e+4)+(t+0.5e-1)) * (e/t)
-        res = zhd + zwd
-        
-    return np.round(res,4)
+
 ##########################################################################################    
 #def stations_in_sinex_multi(sinex_path_list):
 #    """

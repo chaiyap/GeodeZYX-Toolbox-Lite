@@ -426,7 +426,26 @@ def dt2doy_year(dtin,outputtype=str):
     else:
         return outputtype(dtin.strftime('%j')),outputtype(dtin.strftime('%Y'))
     
+def dt2fracday(dtin):
+    """
+    Python's datetime => Seconds in days
 
+    Parameters
+    ----------
+    dtin : datetime or list/numpy.array of datetime
+        Datetime(s). Can handle several datetimes in an iterable.
+        
+    Returns
+    -------
+    fraction_day : float
+        Fractional of the day
+        Is a list of int if the input is an iterable
+    """
+    if cnv_gen.is_iterable(dtin):
+        return [dt2fracday(e) for e in dtin]
+    else:
+        return dtin.hour / 24 + dtin.minute / (60*24) + dtin.second / (60*60*24)
+    
 def dt2secinday(dtin):
     """
     Time conversion
