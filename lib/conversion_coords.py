@@ -621,7 +621,11 @@ def ECEF2ECI(xyz,utc_times):
     """ 
     Convert ECEF (Earth Centered Earth Fixed) positions to ECI (Earth Centered Inertial)
     positions
+<<<<<<< HEAD
         
+=======
+    
+>>>>>>> 1cc432d135e9320ef3bf1dd942c990f4ea3f64e0
     Parameters
     ----------
     xyz : numpy.array of floats
@@ -634,7 +638,11 @@ def ECEF2ECI(xyz,utc_times):
     -------
     eci : numpy.array of floats
         Earth Centered Inertial UTC_times are UTC_times, as datetime objects. Sould have shape (N)    
+<<<<<<< HEAD
      
+=======
+    
+>>>>>>> 1cc432d135e9320ef3bf1dd942c990f4ea3f64e0
     Note
     ----
     Requires pyorbital module
