@@ -1836,6 +1836,66 @@ def read_OTPS_tide_file(pathin,print_line=False,return_array=True):
     else:
         return latlis , lonlis , datlis , hlis
 
+def read_snx_trop(snxfile,dataframe_output=True):
+    """
+    Read troposphere solutions from Troposphere SINEX
+    """
+    
+    STAT , epoc = [] , []
+    tro , stro , tgn , stgn , tge , stge = [] , [] , [] , [] , [] , []
+    
+    flagtrop = False
+    
+    for line in open(snxfile,"r",encoding = "ISO-8859-1"):
+        
+        if re.compile('TROP/SOLUTION').search(line):
+            flagtrop = True
+            continue
+        
+        if re.compile('-TROP/SOLUTION').search(line):
+            flagtrop = False
+            continue
+        
+        if line[0] != ' ':
+            continue
+        else:
+            fields = line.split()
+        
+        if flagtrop ==True:
+            
+            STAT.append(fields[0].upper())
+            if not ':' in fields[1]:
+                epoc.append(geok.convert_partial_year(fields[1]))
+            else:
+                date_elts_lis = fields[1].split(':')
+                yy =  int(date_elts_lis[0]) + 2000
+                doy = int(date_elts_lis[1])
+                sec = int(date_elts_lis[2])
+
+                epoc.append(geok.doy2dt(yy,doy,seconds=sec))
+            
+            tro.append(float(fields[2]))
+            stro.append(float(fields[3]))
+            tgn.append(float(fields[4]))
+            stgn.append(float(fields[5]))
+            tge.append(float(fields[6]))
+            stge.append(float(fields[7]))
+            
+    outtuple = \
+    list(zip(*sorted(zip(STAT , epoc , tro , stro , tgn , stgn , tge , stge))))
+    
+    if dataframe_output:
+        return Tropsinex_DataFrame(outtuple)
+                
+def Tropsinex_DataFrame(read_sinex_result):
+     DF_Sinex = pandas.DataFrame.from_records(list(read_sinex_result)).transpose()
+     colnam = ['STAT','epoc','tro','stro','tgn','stgn','tge','stge']
+     DF_Sinex.columns = colnam
+     cols_numeric = ['tro','stro','tgn','stgn','tge','stge']
+     DF_Sinex[cols_numeric].apply(pandas.to_numeric, errors='coerce')
+     
+     return DF_Sinex
+     
 
 def read_sinex(snxfile,dataframe_output=False):
 
