@@ -2778,9 +2778,13 @@ def read_nevada(filein):
     envfile = open(filein)
 
     for l in envfile:
+                
         f = l.split()
 
         if "site YYMMMDD" in l:
+            continue
+
+        if len(l) == 0:
             continue
 
         stat = f[0]
@@ -3541,6 +3545,7 @@ def read_sp3_header(sp3_path):
                              columns=["AC","sat","sigma"])
     
     return Header_DF    
+
 
 def sp3_decimate(file_in,file_out,step=15):
     

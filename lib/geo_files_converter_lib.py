@@ -2003,6 +2003,69 @@ def sinex_DataFrame(read_sinex_result):
 
     return DF_Sinex
 
+
+def read_sinex_versatile(sinex_path_in , id_block,
+                         convert_date_2_dt = True):
+    """
+    Read a block from a SINEX and return the data as a DataFrame
+
+    Parameters
+    ----------
+    sinex_path_in : str
+        Description param1
+
+    id_block : str
+        Name of the block (without "+" or "-")
+        
+    convert_date_2_dt : bool
+        Try to convert a SINEX formated date as a python datetime
+                
+    Returns
+    -------
+    DF : Pandas DataFrame
+        Returned DataFrame
+    """
+
+    id_block_strt = "\+" + id_block
+    id_block_end  = "\-" + id_block
+    
+    Lines_list = genefun.extract_text_between_elements_2(sinex_path_in,
+                                                         id_block_strt,
+                                                         id_block_end)
+    Lines_list = Lines_list[1:-1]
+    
+    #### Remove commented lines
+    Lines_list_OK = []
+    for i_l , l in enumerate(Lines_list):
+        if l[0] == " " or  i_l == 0:
+            Lines_list_OK.append(l)
+            
+    Lines_str  = "".join(Lines_list_OK)
+    
+    ### define the header
+    header_line = Lines_list[0]
+    Header_split = header_line.split()
+    Fields_size = [len(e)+1 for e in Header_split]
+    
+    ### Read the file
+    DF = pandas.read_fwf(StringIO(Lines_str),width=Fields_size)
+    
+    ### Rename the 1st column (remove the comment marker)
+    DF.rename(columns={DF.columns[0]:DF.columns[0][1:]}, inplace=True)
+    
+    for col in DF.columns:
+        if convert_date_2_dt and re.match("[0-9]{2}:[0-9]{3}:[0-9]{5}",str(DF[col][0])):
+            try:
+                DF[col] = DF[col].apply(lambda x : geok.datestr_sinex_2_dt(x))
+            except:
+                print("WARN : read_sinex_versatile : convert date string to datetime failed")
+                pass
+        
+    return DF
+
+
+
+
 def read_sinex_bench_antenna(sinex_in):
     F = open(sinex_in,"r")
 

@@ -159,41 +159,63 @@ def XYZ2GEO(x,y,z,outdeg=True,
     Based on PYACS of J.-M. Nocquet
     """
 
-    from numpy import sqrt,arctan2,sin,cos,rad2deg
+    F=1.0 - np.sqrt(1-E2)
 
+    TP = np.sqrt(x**2 + y**2)
+    R = np.sqrt(TP**2 + z**2)
 
-    F=1.0 - sqrt(1-E2)
+    TMU = np.arctan2( (z/TP)*((1. - F) + (E2*A)/R) ,1)
+    RLBDA = np.arctan2(y,x)
 
-    TP = sqrt (x**2 + y**2)
-    R = sqrt (TP**2 + z**2)
-
-    TMU = arctan2( (z/TP)*((1. - F) + (E2*A)/R) ,1)
-    RLBDA = arctan2(y,x)
-
-    S3 = (sin(TMU))**3
-    C3 = (cos(TMU))**3
+    S3 = (np.sin(TMU))**3
+    C3 = (np.cos(TMU))**3
     T1 = z*(1 - F) + E2*A*S3
     T2 = (1 - F)*( TP - E2*A*C3 )
 
-    RPHI = arctan2(T1,T2)
+    RPHI = np.arctan2(T1,T2)
 
-    RHE = TP*(cos(RPHI)) + z*(sin(RPHI))
-    RHE = RHE - A*( sqrt(1-E2*(sin(RPHI)**2)) )
+    RHE = TP*(np.cos(RPHI)) + z*(np.sin(RPHI))
+    RHE = RHE - A*( np.sqrt(1-E2*(np.sin(RPHI)**2)) )
 
     if outdeg:
-        RPHI = rad2deg(RPHI)
-        RLBDA = rad2deg(RLBDA)
+        RPHI = np.rad2deg(RPHI)
+        RLBDA = np.rad2deg(RLBDA)
 
     return RPHI,RLBDA,RHE
 
 
 def XYZ2ENU(dX,dY,dZ,lat0,lon0):
     """
+    Coordinates conversion
+
+    XYZ ECEF Geocentric => ENU Topocentic
+    
     core function for XYZ2ENU_2, use the later in priority
 
     dXYZ = XYZrover - XYZref
     
-    NB : this recursive fuction must be definitely improved
+    Parameters
+    ----------
+    dX,dY,dZ : floats or numpy.array of floats
+        cartesian coordinates difference between the considered point(s)
+        and the reference point 
+        
+    lat0,lon0 : floats or numpy.array of floats
+        if they are iterable arrays (of the same size as dX,dY,dZ) 
+        a different x0,y0,z0 will be applied for each dX,dY,dZ element
+
+    Returns
+    -------
+    E,N,U : numpy.array of floats
+        East North Up Component (m) w.r.t. x0,y0,z0
+        
+    Source
+    ------
+    https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates
+    
+    Note
+    ----
+    This recursive fuction should be improved
     """
     
     ## Case one ref point per dXYZ
@@ -238,7 +260,7 @@ def XYZ2ENU_2(X,Y,Z,x0,y0,z0):
         cartesian coordinates X,Y,Z in meters
         
     x0,y0,z0 : floats or numpy.array of floats
-        coordinate of the topocentric origin point in the geocentric frame
+        coordinate of the wished topocentric origin point in the geocentric frame
         if they are iterable arrays (of the same size as X,Y,Z) 
         a different x0,y0,z0 will be applied for each X,Y,Z element
 
@@ -374,11 +396,13 @@ def sFLH2sXYZ(F,L,H,sF,sL,sH,ang='deg'):
     Convert standard deviation
     Geographic FLH => Cartesian ECEF XYZ
     
-    CAUTION
+    WARNING
     -------
     Inputs values are assumed as uncorrelated, which is not accurate
     Must be improved
     
+    Source
+    ------
     Linear Algebra, Geodesy, and GPS p332
     """
     
@@ -405,11 +429,13 @@ def sFLH2sENU(F,L,H,sF,sL,sH,ang='deg'):
     Convert standard deviation
     Geographic FLH => Cartesian Topocentric ENU
     
-    CAUTION
+    WARNING
     -------
     Inputs values are assumed as uncorrelated, which is not accurate
     Must be improved
     
+    Source
+    ------
     Linear Algebra, Geodesy, and GPS p332
     """
     # conversion batarde du sigma FLH => sigma ENU
@@ -444,11 +470,13 @@ def sENU2sFLH(F,L,H,sE,sN,sU,ang='deg',
     Convert standard deviation
     Cartesian Topocentric ENU => Geographic FLH 
     
-    CAUTION
+    WARNING
     -------
     Inputs values are assumed as uncorrelated, which is not accurate
     Must be improved
     
+    Source
+    ------
     Linear Algebra, Geodesy, and GPS p332
     """
     # conversion batarde du sigma ENU => sigma FLH
@@ -480,11 +508,13 @@ def sXYZ2sENU(X,Y,Z,sX,sY,sZ,sXY=0,sYZ=0,sXZ=0):
     Convert standard deviation
     Cartesian ECEF XYZ => Cartesian Topocentric ENU 
     
-    CAUTION
+    WARNING
     -------
     Inputs values are assumed as uncorrelated, which is not accurate
     Must be improved
     
+    Source
+    ------
     Linear Algebra, Geodesy, and GPS p332
     """
 
@@ -592,11 +622,18 @@ def ECEF2ECI(xyz,utc_times):
     Convert ECEF (Earth Centered Earth Fixed) positions to ECI (Earth Centered Inertial)
     positions
         
+    Parameters
+    ----------
     xyz : numpy.array of floats
         XYZ are cartesian positions in ECEF. Should have shape (N,3)
     
     utc_times : numpy.array of floats
-        UTC_times are UTC_times, as datetime objects. Sould have shape (N)
+        UTC_times are UTC timestamps, as datetime objects. Sould have shape (N)
+    
+    Returns
+    -------
+    eci : numpy.array of floats
+        Earth Centered Inertial UTC_times are UTC_times, as datetime objects. Sould have shape (N)    
      
     Note
     ----
@@ -1441,7 +1478,7 @@ def vincenty_full(point1, point2, miles=False,full=True,azimuth_in_deg=True):
     
 def orthogonal_projection(Xa,Xb,Xv):
     """
-    Project a A point on a line defined with a vector V and a point B
+    Project a point A on a line defined with a vector V and a point B
     
     Parameters
     ----------
@@ -1737,6 +1774,9 @@ def helmert_trans(Xa,params='itrf2008_2_etrf2000',invert=True,workepoc=2009.):
 
 
 def helmert_trans_estim_matrixs_maker(X1 , X2):
+    """
+    internal function for helmert_trans_estim
+    """
     x1 , y1 , z1 = X1
     x2 , y2 , z2 = X2
     
@@ -1758,17 +1798,24 @@ def helmert_trans_estim(X1list , X2list):
     estimates 7 parameters of a 3D Helmert transformation between a set of points
     X1 and a set of points X2 (compute transformation X1 => X2)
     
-    Inputs :
-        X1list & X2list : list of N (x,y,z) points ,
+    Parameters
+    ----------
+    
+    X1list & X2list : list of N (x,y,z) points ,
         or an numpy array of shape (3, N)
     
-    Outputs :
-        Res : 7 Helmert params. : x,y,z translations, x,y,z rotations, scale
-        A : Design matrix
-        l : X2 - X1
+    Returns
+    -------
+    Res :
+        7 Helmert params. : x,y,z translations, x,y,z rotations, scale
+    A :
+        Design matrix    
+    l :
+        X2 - X1
         
-    Source :
-        https://elib.uni-stuttgart.de/bitstream/11682/9661/1/BscThesis_GaoYueqing.pdf
+    Source
+    ------
+    https://elib.uni-stuttgart.de/bitstream/11682/9661/1/BscThesis_GaoYueqing.pdf
     """
 
     l_stk = []
