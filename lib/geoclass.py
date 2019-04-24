@@ -3540,8 +3540,7 @@ def read_sp3_header(sp3_path):
     Header_DF = pd.DataFrame(list(zip(AC_name_list,Sat_prn_list_final,Sat_sig_list_final)),
                              columns=["AC","sat","sigma"])
     
-    return Header_DF
-
+    return Header_DF    
 
 def sp3_decimate(file_in,file_out,step=15):
     
@@ -5065,7 +5064,8 @@ def stations_in_sinex_mono(sinex_path):
     return epoch , stats_list
 
 
-
+####################### NEW READ FCTS ####################################################    
+    
 #def stations_in_sinex_multi(sinex_path_list):
 #    """
 #    Gives stations list in a SINEX
