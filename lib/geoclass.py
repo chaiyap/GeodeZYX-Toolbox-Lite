@@ -5064,8 +5064,63 @@ def stations_in_sinex_mono(sinex_path):
     return epoch , stats_list
 
 
-####################### NEW READ FCTS ####################################################    
+####################### Compare troposphere delay  ####################################################    
+def compare_trop_solu(input_file,STA1,STA2,mode="DF"):
+    """
+    Calculate differences of tropospheric delay and gradients between selected stations (Atmospheric ties)
+    Args  :
+          sinex_file : troposphere solutions from sinex
+          STA1 : Reference station
+          STA2 : Rover station
+          mode : data in DataFrame (DF) or SINEX (SINEX) (Default DataFrame)
+    Return :
+         trop_diff : difference of tropospheric delay and gradients between selected stations (Atmospheric ties)
+                     and uncertainty of atmospheric ties and gradients ties
+    """
     
+    if mode == "SINEX":    
+        trop_pd = gfc.read_snx_trop(input_file)
+    elif mode == "DF":
+        trop_pd = input_file
+        
+    trop_ref = trop_pd[trop_pd.STAT == STA1]
+    trop_rov = trop_pd[trop_pd.STAT == STA2]
+    
+    if trop_ref.empty:
+        print("No solution for Reference station")
+        return
+
+    if trop_rov.empty:
+        print("No solution for Rover station")
+        return
+    
+    diff_pd = pd.merge(trop_ref,trop_rov,how='outer',on='epoc')
+    diff_pd = diff_pd.dropna()
+    # Tropospheric ties
+    diff_pd['Trop_ties'] = diff_pd['tro_x'] - diff_pd['tro_y']
+    diff_pd['STrop_ties'] = np.nan # add blank column before input values
+    diff_pd['STrop_ties'] = diff_pd.apply(lambda x: np.round(np.sqrt(x.stro_x**2 + x.stro_y**2),2),axis=1)
+    
+    # North gradients ties
+    diff_pd['Ngra_ties'] = diff_pd['tgn_x'] - diff_pd['tgn_y']
+    diff_pd['SNgra_ties'] = np.nan # add blank column before input values
+    diff_pd['SNgra_ties'] = diff_pd.apply(lambda x: np.round(np.sqrt(x.stgn_x**2 + x.stgn_y**2),2),axis=1)
+    
+    # East gradients ties
+    diff_pd['Egra_ties'] = diff_pd['tge_x'] - diff_pd['tge_y']
+    diff_pd['SEgra_ties'] = np.nan # add blank column before input values
+    diff_pd['SEgra_ties'] = diff_pd.apply(lambda x: np.round(np.sqrt(x.stge_x**2 + x.stge_y**2),2),axis=1)
+    
+    #drop unnecessary column
+    diff_pd = diff_pd.drop(['tro_x', 'stro_x', 'tgn_x', 'stgn_x', 'tge_x', 'stge_x','tro_y', 'stro_y', 'tgn_y', 'stgn_y', 'tge_y','stge_y'],axis=1)
+    
+    #Change column name of station
+    diff_pd = diff_pd.rename(index=str,columns={"STAT_x":"STAT_ref","STAT_y":"STAT_rov"})
+    
+    return diff_pd
+    
+    
+##########################################################################################    
 #def stations_in_sinex_multi(sinex_path_list):
 #    """
 #    Gives stations list in a SINEX
