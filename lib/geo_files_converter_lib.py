@@ -1836,66 +1836,6 @@ def read_OTPS_tide_file(pathin,print_line=False,return_array=True):
     else:
         return latlis , lonlis , datlis , hlis
 
-def read_snx_trop(snxfile,dataframe_output=True):
-    """
-    Read troposphere solutions from Troposphere SINEX
-    """
-    
-    STAT , epoc = [] , []
-    tro , stro , tgn , stgn , tge , stge = [] , [] , [] , [] , [] , []
-    
-    flagtrop = False
-    
-    for line in open(snxfile,"r",encoding = "ISO-8859-1"):
-        
-        if re.compile('TROP/SOLUTION').search(line):
-            flagtrop = True
-            continue
-        
-        if re.compile('-TROP/SOLUTION').search(line):
-            flagtrop = False
-            continue
-        
-        if line[0] != ' ':
-            continue
-        else:
-            fields = line.split()
-        
-        if flagtrop ==True:
-            
-            STAT.append(fields[0].upper())
-            if not ':' in fields[1]:
-                epoc.append(geok.convert_partial_year(fields[1]))
-            else:
-                date_elts_lis = fields[1].split(':')
-                yy =  int(date_elts_lis[0]) + 2000
-                doy = int(date_elts_lis[1])
-                sec = int(date_elts_lis[2])
-
-                epoc.append(geok.doy2dt(yy,doy,seconds=sec))
-            
-            tro.append(float(fields[2]))
-            stro.append(float(fields[3]))
-            tgn.append(float(fields[4]))
-            stgn.append(float(fields[5]))
-            tge.append(float(fields[6]))
-            stge.append(float(fields[7]))
-            
-    outtuple = \
-    list(zip(*sorted(zip(STAT , epoc , tro , stro , tgn , stgn , tge , stge))))
-    
-    if dataframe_output:
-        return Tropsinex_DataFrame(outtuple)
-                
-def Tropsinex_DataFrame(read_sinex_result):
-     DF_Sinex = pandas.DataFrame.from_records(list(read_sinex_result)).transpose()
-     colnam = ['STAT','epoc','tro','stro','tgn','stgn','tge','stge']
-     DF_Sinex.columns = colnam
-     cols_numeric = ['tro','stro','tgn','stgn','tge','stge']
-     DF_Sinex[cols_numeric].apply(pandas.to_numeric, errors='coerce')
-     
-     return DF_Sinex
-     
 
 def read_sinex(snxfile,dataframe_output=False):
 
@@ -2002,6 +1942,69 @@ def sinex_DataFrame(read_sinex_result):
         
 
     return DF_Sinex
+
+
+def read_sinex_versatile(sinex_path_in , id_block,
+                         convert_date_2_dt = True):
+    """
+    Read a block from a SINEX and return the data as a DataFrame
+
+    Parameters
+    ----------
+    sinex_path_in : str
+        Description param1
+
+    id_block : str
+        Name of the block (without "+" or "-")
+        
+    convert_date_2_dt : bool
+        Try to convert a SINEX formated date as a python datetime
+                
+    Returns
+    -------
+    DF : Pandas DataFrame
+        Returned DataFrame
+    """
+
+    id_block_strt = "\+" + id_block
+    id_block_end  = "\-" + id_block
+    
+    Lines_list = genefun.extract_text_between_elements_2(sinex_path_in,
+                                                         id_block_strt,
+                                                         id_block_end)
+    Lines_list = Lines_list[1:-1]
+    
+    #### Remove commented lines
+    Lines_list_OK = []
+    for i_l , l in enumerate(Lines_list):
+        if l[0] == " " or  i_l == 0:
+            Lines_list_OK.append(l)
+            
+    Lines_str  = "".join(Lines_list_OK)
+    
+    ### define the header
+    header_line = Lines_list[0]
+    Header_split = header_line.split()
+    Fields_size = [len(e)+1 for e in Header_split]
+    
+    ### Read the file
+    DF = pandas.read_fwf(StringIO(Lines_str),width=Fields_size)
+    
+    ### Rename the 1st column (remove the comment marker)
+    DF.rename(columns={DF.columns[0]:DF.columns[0][1:]}, inplace=True)
+    
+    for col in DF.columns:
+        if convert_date_2_dt and re.match("[0-9]{2}:[0-9]{3}:[0-9]{5}",str(DF[col][0])):
+            try:
+                DF[col] = DF[col].apply(lambda x : geok.datestr_sinex_2_dt(x))
+            except:
+                print("WARN : read_sinex_versatile : convert date string to datetime failed")
+                pass
+        
+    return DF
+
+
+
 
 def read_sinex_bench_antenna(sinex_in):
     F = open(sinex_in,"r")
