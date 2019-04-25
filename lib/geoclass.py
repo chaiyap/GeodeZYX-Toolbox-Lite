@@ -5066,7 +5066,7 @@ def stations_in_sinex_mono(sinex_path):
 
 
 ####################### Compare troposphere delay  ####################################################    
-def compare_trop_solu(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=False,mode="DF",mode_coor="sinex"):
+def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=False,mode="DF",mode_coor="sinex"):
     """
     Calculate differences of tropospheric delay and gradients between selected stations (Atmospheric ties)
     Args  :
@@ -5155,7 +5155,7 @@ def compare_trop_solu(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
     diff_pd = diff_pd.rename(index=str,columns={"STAT_x":"STAT_ref","STAT_y":"STAT_rov"})
 
     return diff_pd
-
+    
 ##########################################################################################    
 #def stations_in_sinex_multi(sinex_path_list):
 #    """
