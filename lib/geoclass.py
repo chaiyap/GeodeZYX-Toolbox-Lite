@@ -51,6 +51,7 @@ import operator
 from natsort import natsorted, ns
 import tabulate
 import geo_files_converter_lib as gfc
+import geo_trop as gtro
 from matplotlib.widgets import MultiCursor
 import matplotlib
 import linecache
@@ -5065,14 +5066,18 @@ def stations_in_sinex_mono(sinex_path):
 
 
 ####################### Compare troposphere delay  ####################################################    
-def compare_trop_solu(input_file,STA1,STA2,mode="DF"):
+def compare_trop_solu(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=False,mode="DF",mode_coor="sinex"):
     """
     Calculate differences of tropospheric delay and gradients between selected stations (Atmospheric ties)
     Args  :
           sinex_file : troposphere solutions from sinex
           STA1 : Reference station
           STA2 : Rover station
+          coord_file : Station coordinates file path
+          grid_met : Grid file for meteological information from Global Pressture Temperature (GPT)
+          apply_ties : Apply height coorections from standard ties (Default No)
           mode : data in DataFrame (DF) or SINEX (SINEX) (Default DataFrame)
+          mode_coor : Coordinates file format in SINEX or EPOS format (Argruments : sinex , epos)
     Return :
          trop_diff : difference of tropospheric delay and gradients between selected stations (Atmospheric ties)
                      and uncertainty of atmospheric ties and gradients ties
@@ -5111,12 +5116,44 @@ def compare_trop_solu(input_file,STA1,STA2,mode="DF"):
     diff_pd['SEgra_ties'] = np.nan # add blank column before input values
     diff_pd['SEgra_ties'] = diff_pd.apply(lambda x: np.round(np.sqrt(x.stge_x**2 + x.stge_y**2),2),axis=1)
     
+     # Apply height corrections from Standard ties
+    if apply_ties == True:
+        
+        if isinstance(grid_met,str):
+            print("Please read grid file before use this function")
+            return
+        
+        if mode_coor == "epos":
+            coord = read_epos_sta_coords_mono(coord_file)
+            # Extract coordinates Ref station in Lat. Lon. height
+            coord_ref = coord[coord.site==STA1]
+            lat_ref , lon_ref , h_ref = geok.XYZ2GEO(coord_ref.x,coord_ref.y,coord_ref.z,False)
+            # Extract coordinates Rov station in Lat. Lon. height
+            coord_rov = coord[coord.site==STA2]
+            lat_rov , lon_rov , h_rov = geok.XYZ2GEO(coord_rov.x,coord_rov.y,coord_rov.z,False)
+        elif mode_coor == "sinex":
+            coord = gfc.read_sinex(coord_file)
+             # Extract coordinates Ref station in Lat. Lon. height
+            coord_ref = coord[coord.STAT==STA1]
+            lat_ref , lon_ref , h_ref = geok.XYZ2GEO(coord_ref.x,coord_ref.y,coord_ref.z,False)
+            # Extract coordinates Rov station in Lat. Lon. height
+            coord_rov = coord[coord.STAT==STA2]
+            lat_rov , lon_rov , h_rov = geok.XYZ2GEO(coord_rov.x,coord_rov.y,coord_rov.z,False)
+        
+        lat_ref , lon_ref , h_ref = float(lat_ref) , float(lon_ref) , float(h_ref)
+        lat_rov , lon_rov , h_rov = float(lat_rov) , float(lon_rov) , float(h_rov)
+        
+        #Extract standard ties
+        grid = grid_met
+        diff_pd['stand_ties'] = diff_pd.apply(lambda x: gtro.calc_stand_ties(x['epoc'],lat_ref , lon_ref , h_ref,lat_rov , lon_rov , h_rov,grid),axis=1)
+        diff_pd['Trop_ties_corr'] = diff_pd.apply(lambda x: x['tro_x'] - (x['tro_y']+x['stand_ties']),axis=1)
+        
     #drop unnecessary column
     diff_pd = diff_pd.drop(['tro_x', 'stro_x', 'tgn_x', 'stgn_x', 'tge_x', 'stge_x','tro_y', 'stro_y', 'tgn_y', 'stgn_y', 'tge_y','stge_y'],axis=1)
     
     #Change column name of station
     diff_pd = diff_pd.rename(index=str,columns={"STAT_x":"STAT_ref","STAT_y":"STAT_rov"})
-    
+
     return diff_pd
 
 ##########################################################################################    
