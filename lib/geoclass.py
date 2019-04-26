@@ -39,6 +39,7 @@ import scipy
 from scipy.interpolate import interp1d
 import os
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 from matplotlib.figure import Figure
 import csv
 import pandas as pd
@@ -5177,6 +5178,7 @@ def plot_trop_ties(df,ref_sta,rov_sta,savePlot=False,filePath="",fileName=""):
     plt.grid()
     ax.set_ylabel("Trop. ties (mm)")
     ax.set_xlabel("Time")
+    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
     plt.title("Total delay ties of " + ref_sta + "-" + rov_sta)
     plt.legend(["Trop.ties","Trop. ties apply height corr."])
     
