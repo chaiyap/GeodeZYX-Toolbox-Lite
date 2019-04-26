@@ -1892,7 +1892,7 @@ def Tropsinex_DataFrame(read_sinex_result):
      colnam = ['STAT','epoc','tro','stro','tgn','stgn','tge','stge']
      DF_Sinex.columns = colnam
      cols_numeric = ['tro','stro','tgn','stgn','tge','stge']
-     DF_Sinex[cols_numeric].apply(pandas.to_numeric, errors='coerce')
+     DF_Sinex[cols_numeric] = DF_Sinex[cols_numeric].apply(pandas.to_numeric, errors='coerce')
      
      return DF_Sinex
      
