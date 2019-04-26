@@ -5155,7 +5155,38 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
     diff_pd = diff_pd.rename(index=str,columns={"STAT_x":"STAT_ref","STAT_y":"STAT_rov"})
 
     return diff_pd
+
+def plot_trop_ties(df,ref_sta,rov_sta,savePlot=False,filePath="",fileName=""):
+    """
+    Plot tropospheric ties function
+    Input:
+        df : DataFrame from "compare_trop_ties" function
+        ref_sta : Refernce station
+        rov_sta : Rover station
+        savePlot : save figure
+        filePath : Directory to save
+        fileName : Filename of figure
+    """
     
+    fig = plt.figure()
+    ax = fig.gca()
+    epo_plt = geok.dt2year_decimal(df.epoc)
+    plt.plot(epo_plt,df.Trop_ties , marker="P",linestyle="--")
+    plt.plot(epo_plt,df.Trop_ties_corr,marker="*",linestyle="-.")
+    plt.tight_layout()
+    plt.grid()
+    ax.set_ylabel("Trop. ties (mm)")
+    ax.set_xlabel("Time")
+    plt.title("Total delay ties of " + ref_sta + "-" + rov_sta)
+    plt.legend(["Trop.ties","Trop. ties apply height corr."])
+    
+    if savePlot:
+        export_ts_figure_pdf(fig,filePath,fileName,True)
+    
+    plt.show()
+    
+    return None       
+        
 ##########################################################################################    
 #def stations_in_sinex_multi(sinex_path_list):
 #    """
