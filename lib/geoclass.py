@@ -1588,8 +1588,49 @@ def read_gins_solution_multi(filein_list,return_dict = True):
         return ts_list
         
 
-
-
+def read_epos_sta_kinematics(filein):
+    """
+    read an EPOS kinematic solutions
+    """
+    
+    F = open(filein)
+    Lines_4_DF_stk = []
+    for l in F:
+        fields = l.split()
+        if l[0] != "K":
+            continue
+        if l[0] == "K":
+            namstat = fields[2]
+            numstat = int(fields[1])
+            MJD_epo = float(fields[3])
+            
+            X = float(fields[6])
+            Y = float(fields[7])
+            Z = float(fields[8])
+            sX = float(fields[10])
+            sY = float(fields[11])
+            sZ = float(fields[12])
+            
+            N = float(fields[14])
+            E = float(fields[15])
+            U = float(fields[16])
+            sN = float(fields[18])
+            sE = float(fields[19])
+            sU = float(fields[20])
+            
+            tup_4_df = (namstat,numstat,MJD_epo,X,Y,Z,sX,sY,sZ,
+                        N,E,U,sN,sE,sU)
+            Lines_4_DF_stk.append(tup_4_df)
+            
+    columns = ("site","site_num",
+                   "MJD_epo",
+                   "x","y","z","sx","sy","sz",
+                   "N","E","U","sN","sE","sU")
+    
+    DFout = pd.DataFrame(Lines_4_DF_stk,
+                     columns=columns)
+    return DFout
+    
 def read_epos_sta_coords_mono(filein,return_df=True):
     """
     read an EPOS's YYYY_DDD_XX_sta_coordinates coordinates files
@@ -5078,7 +5119,7 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
           grid_met : Grid file for meteological information from Global Pressture Temperature (GPT)
           apply_ties : Apply height coorections from standard ties (Default No)
           mode : data in DataFrame (DF) or SINEX (SINEX) (Default DataFrame)
-          mode_coor : Coordinates file format in SINEX or EPOS format (Argruments : sinex , epos)
+          mode_coor : Coordinates file format in SINEX or EPOS or DataFrame format (Argruments : sinex , epos , df)
     Return :
          trop_diff : difference of tropospheric delay and gradients between selected stations (Atmospheric ties)
                      and uncertainty of atmospheric ties and gradients ties
