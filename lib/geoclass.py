@@ -5108,7 +5108,7 @@ def stations_in_sinex_mono(sinex_path):
 
 
 ####################### Compare troposphere delay  ####################################################    
-def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=False,mode="DF",mode_coor="sinex"):
+def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=False,mode="DF",mode_coor="sinex",coord_t="static"):
     """
     Calculate differences of tropospheric delay and gradients between selected stations (Atmospheric ties)
     Args  :
@@ -5120,6 +5120,7 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
           apply_ties : Apply height coorections from standard ties (Default No)
           mode : data in DataFrame (DF) or SINEX (SINEX) (Default DataFrame)
           mode_coor : Coordinates file format in SINEX or EPOS or DataFrame format (Argruments : sinex , epos , df)
+          coord_t : static (default) or kinematic
     Return :
          trop_diff : difference of tropospheric delay and gradients between selected stations (Atmospheric ties)
                      and uncertainty of atmospheric ties and gradients ties
@@ -5165,7 +5166,7 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
             print("Please read grid file before use this function")
             return
         
-        if mode_coor == "epos":
+        if mode_coor == "epos" and coord_t == "static":
             coord = read_epos_sta_coords_mono(coord_file)
             # Extract coordinates Ref station in Lat. Lon. height
             coord_ref = coord[coord.site==STA1]
@@ -5173,7 +5174,7 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
             # Extract coordinates Rov station in Lat. Lon. height
             coord_rov = coord[coord.site==STA2]
             lat_rov , lon_rov , h_rov = geok.XYZ2GEO(coord_rov.x,coord_rov.y,coord_rov.z,False)
-        elif mode_coor == "sinex":
+        elif mode_coor == "sinex" and coord_t == "static":
             coord = gfc.read_sinex(coord_file)
              # Extract coordinates Ref station in Lat. Lon. height
             coord_ref = coord[coord.STAT==STA1]
@@ -5181,17 +5182,39 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
             # Extract coordinates Rov station in Lat. Lon. height
             coord_rov = coord[coord.STAT==STA2]
             lat_rov , lon_rov , h_rov = geok.XYZ2GEO(coord_rov.x,coord_rov.y,coord_rov.z,False)
+        elif mode_coor == "epos" and coord_t == "kinematic":
+            coord = read_epos_sta_kinematics(coord_file)
+            # Extract coordinates Ref station in Lat. Lon. height
+            coord_ref = coord[coord.site==STA1.lower()]
+            f_x_ref , f_y_ref , f_z_ref = interpolator_with_extrapolated(coord_ref.MJD_epo,coord_ref.x,coord_ref.y,coord_ref.z)
+            x_ref_new = f_x_ref(geok.dt2MJD(diff_pd.epoc))
+            y_ref_new = f_y_ref(geok.dt2MJD(diff_pd.epoc))
+            z_ref_new = f_z_ref(geok.dt2MJD(diff_pd.epoc))
+            lat_ref , lon_ref , h_ref = geok.XYZ2GEO(x_ref_new,y_ref_new,z_ref_new,False)
+            
+            # Extract coordinates Rov station in Lat. Lon. height
+            coord_rov = coord[coord.site==STA2.lower()]
+            f_x_rov , f_y_rov , f_z_rov = interpolator_with_extrapolated(coord_rov.MJD_epo,coord_rov.x,coord_rov.y,coord_rov.z)
+            x_rov_new = f_x_rov(geok.dt2MJD(diff_pd.epoc))
+            y_rov_new = f_y_rov(geok.dt2MJD(diff_pd.epoc))
+            z_rov_new = f_z_rov(geok.dt2MJD(diff_pd.epoc))
+            lat_rov , lon_rov , h_rov = geok.XYZ2GEO(x_rov_new,y_rov_new,z_rov_new,False)
+            
+            diff_pd['lat_ref'] , diff_pd['lon_ref'] , diff_pd['h_ref'] = lat_ref , lon_ref , h_ref
+            diff_pd['lat_rov'] , diff_pd['lon_rov'] , diff_pd['h_rov'] = lat_rov , lon_rov , h_rov
         
-        lat_ref , lon_ref , h_ref = float(lat_ref) , float(lon_ref) , float(h_ref)
-        lat_rov , lon_rov , h_rov = float(lat_rov) , float(lon_rov) , float(h_rov)
         
         #Extract standard ties
         grid = grid_met
-        diff_pd['stand_ties'] = diff_pd.apply(lambda x: gtro.calc_stand_ties(x['epoc'],lat_ref , lon_ref , h_ref,lat_rov , lon_rov , h_rov,grid),axis=1)
+        if coord_t == "kinematic":
+            diff_pd['stand_ties'] = diff_pd.apply(lambda x: gtro.calc_stand_ties(x['epoc'],x.lat_ref , x.lon_ref , x.h_ref,x.lat_rov , x.lon_rov , x.h_rov,grid),axis=1)
+        else:
+            diff_pd['stand_ties'] = diff_pd.apply(lambda x: gtro.calc_stand_ties(x['epoc'],lat_ref , lon_ref , h_ref,lat_rov , lon_rov , h_rov,grid),axis=1)
+            
         diff_pd['Trop_ties_corr'] = diff_pd.apply(lambda x: x['tro_x'] - (x['tro_y']+x['stand_ties']),axis=1)
         
     #drop unnecessary column
-    diff_pd = diff_pd.drop(['tro_x', 'stro_x', 'tgn_x', 'stgn_x', 'tge_x', 'stge_x','tro_y', 'stro_y', 'tgn_y', 'stgn_y', 'tge_y','stge_y'],axis=1)
+    diff_pd = diff_pd.drop(['tro_x', 'stro_x', 'tgn_x', 'stgn_x', 'tge_x', 'stge_x','tro_y', 'stro_y', 'tgn_y', 'stgn_y', 'tge_y','stge_y','lat_ref','lon_ref','h_ref','lat_rov','lon_rov','h_rov'],axis=1)
     
     #Change column name of station
     diff_pd = diff_pd.rename(index=str,columns={"STAT_x":"STAT_ref","STAT_y":"STAT_rov"})
@@ -6784,7 +6807,14 @@ def interpolator_light(T,X,Y,Z):
 
     return IX , IY , IZ
 
+def interpolator_with_extrapolated(T,X,Y,Z):
+    from scipy.interpolate import interp1d
 
+    IX = interp1d(T,X,bounds_error=False,fill_value="extrapolate")
+    IY = interp1d(T,Y,bounds_error=False,fill_value="extrapolate")
+    IZ = interp1d(T,Z,bounds_error=False,fill_value="extrapolate")
+
+    return IX , IY , IZ
 
 
 
