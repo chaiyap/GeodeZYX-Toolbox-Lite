@@ -5268,31 +5268,55 @@ def stat_summary_trop_ties(df):
     
     return [wmean_no_ties,wmean_wt_ties,rms_mean_no_ties,rms_mean_wt_ties]
 
-def plot_trop_ties(df,ref_sta,rov_sta,savePlot=False,filePath="",fileName=""):
+def plot_trop_ties(df,ref_sta,rov_sta,analy_coor=False,df_coord="",savePlot=False,filePath="",fileName=""):
     """
     Plot tropospheric ties function
     Input:
         df : DataFrame from "compare_trop_ties" function
         ref_sta : Refernce station
         rov_sta : Rover station
+        analy_coor : Add height difference information
+        df_coord : list of height difference
         savePlot : save figure
         filePath : Directory to save
         fileName : Filename of figure
     """
-    
-    fig = plt.figure()
-    ax = fig.gca()
     epo_plt = geok.dt2year_decimal(df.epoc)
-    plt.plot(epo_plt,df.Trop_ties , marker="P",linestyle="--")
-    plt.plot(epo_plt,df.Trop_ties_corr,marker="*",linestyle="-.")
-    plt.tight_layout()
-    plt.grid()
-    ax.set_ylabel("Trop. ties (mm)")
-    ax.set_xlabel("Time")
-    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
-    plt.title("Total delay ties of " + ref_sta + "-" + rov_sta)
-    plt.legend(["Trop.ties","Trop. ties apply height corr."])
     
+    if analy_coor:
+        fig, ax = plt.subplots(2,1,sharex=True)
+        axA = ax[0]
+        axB = ax[1]
+        axA.plot(epo_plt,df.Trop_ties , marker="P",linestyle="--",label="Trop.ties")
+        if 'Trop_ties_corr' in df.columns:
+            axA.plot(epo_plt,df.Trop_ties_corr,marker="*",linestyle="-.",label="Trop. ties apply height corr.")
+        axA.grid()
+        axA.legend()
+        axA.set_ylabel("Trop. ties (mm)")
+        axA.set_xlabel("Time")
+        axA.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
+        
+        axB.plot(epo_plt,df_coord,marker="P",linestyle="--",label="Height difference")
+        axB.grid()
+        axB.legend()
+        axB.set_ylabel("Height difference (m)")
+        axB.set_xlabel("Time")
+        axB.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
+    else:
+        fig , ax = plt.subplots(1,1)
+        axA = ax
+        axA.plot(epo_plt,df.Trop_ties , marker="P",linestyle="--",label="Trop.ties")
+        if 'Trop_ties_corr' in df.columns:
+            axA.plot(epo_plt,df.Trop_ties_corr,marker="*",linestyle="-.",label="Trop. ties apply height corr.")
+        axA.grid()
+        axA.legend()
+        axA.set_ylabel("Trop. ties (mm)")
+        axA.set_xlabel("Time")
+        axA.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
+    
+    
+    plt.tight_layout()
+    plt.suptitle("Total delay ties of " + ref_sta + "-" + rov_sta)
     if savePlot:
         export_ts_figure_pdf(fig,filePath,fileName,True)
     
