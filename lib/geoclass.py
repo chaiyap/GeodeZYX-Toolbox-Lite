@@ -5135,12 +5135,12 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
     trop_rov = trop_pd[trop_pd.STAT == STA2]
     
     if trop_ref.empty:
-        print("No solution for Reference station")
-        return
+        print("No solution for "+STA1+" Reference station")
+        return None,None
 
     if trop_rov.empty:
-        print("No solution for Rover station")
-        return
+        print("No solution for "+STA2+" Rover station")
+        return None,None
     
     diff_pd = pd.merge(trop_ref,trop_rov,how='outer',on='epoc')
     diff_pd = diff_pd.dropna()
@@ -5164,7 +5164,7 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
         
         if isinstance(grid_met,str):
             print("Please read grid file before use this function")
-            return
+            return None,None
         
         if mode_coor == "epos" and coord_t == "static":
             coord = read_epos_sta_coords_mono(coord_file)
@@ -5174,14 +5174,38 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
             # Extract coordinates Rov station in Lat. Lon. height
             coord_rov = coord[coord.site==STA2]
             lat_rov , lon_rov , h_rov = geok.XYZ2GEO(coord_rov.x,coord_rov.y,coord_rov.z,False)
+           
+            #Merge coordinates results
+            coord_res = pd.merge(coord_ref,coord_rov,how='outer',on='MJD_ref')
+            coord_res['lat_ref'] , coord_res['lon_ref'] , coord_res['h_ref'] = float(lat_ref) , float(lon_ref) , float(h_ref)
+            coord_res['lat_rov'] , coord_res['lon_rov'] , coord_res['h_rov'] = float(lat_rov) , float(lon_rov) , float(h_rov)
+            
+            #drop unnecessary column
+            coord_res = coord_res.drop([ 'site_num_x', 'tecto_plate_x', 'MJD_start_x',
+                                        'MJD_end_x', 'Vx_x',
+                                        'Vy_x', 'Vz_x', 'sVx_x', 'sVy_x', 'sVz_x', 'site_num_y',
+                                        'tecto_plate_y', 'MJD_start_y', 'MJD_end_y', 'Vx_y', 'Vy_y', 'Vz_y', 'sVx_y', 'sVy_y',
+                                        'sVz_y'],axis=1)
+            
         elif mode_coor == "sinex" and coord_t == "static":
-            coord = gfc.read_sinex(coord_file)
+            coord = gfc.read_sinex(coord_file,True)
              # Extract coordinates Ref station in Lat. Lon. height
             coord_ref = coord[coord.STAT==STA1]
             lat_ref , lon_ref , h_ref = geok.XYZ2GEO(coord_ref.x,coord_ref.y,coord_ref.z,False)
             # Extract coordinates Rov station in Lat. Lon. height
             coord_rov = coord[coord.STAT==STA2]
             lat_rov , lon_rov , h_rov = geok.XYZ2GEO(coord_rov.x,coord_rov.y,coord_rov.z,False)
+            
+            #Merge coordinates results
+            coord_res = pd.merge(coord_ref,coord_rov,how='outer',on='epoc')
+            coord_res['lat_ref'] , coord_res['lon_ref'] , coord_res['h_ref'] = float(lat_ref) , float(lon_ref) , float(h_ref)
+            coord_res['lat_rov'] , coord_res['lon_rov'] , coord_res['h_rov'] = float(lat_rov) , float(lon_rov) , float(h_rov)
+            
+             #drop unnecessary columns
+            coord_res = coord_res.drop(['AC_x', 'soln_x', 'vx_x', 'vy_x', 'vz_x', 'svx_x', 'svy_x', 'svz_x', 'start_x',
+                                       'end_x', 'AC_y', 'soln_y', 'vx_y', 'vy_y', 'vz_y', 'svx_y', 'svy_y', 'svz_y',
+                                       'start_y', 'end_y'],axis=1)
+            
         elif mode_coor == "epos" and coord_t == "kinematic":
             coord = read_epos_sta_kinematics(coord_file)
             # Extract coordinates Ref station in Lat. Lon. height
@@ -5202,24 +5226,31 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
             
             diff_pd['lat_ref'] , diff_pd['lon_ref'] , diff_pd['h_ref'] = lat_ref , lon_ref , h_ref
             diff_pd['lat_rov'] , diff_pd['lon_rov'] , diff_pd['h_rov'] = lat_rov , lon_rov , h_rov
-        
-        
+            
+            #Merge coordinates results
+            coord_res = diff_pd[['STAT_x','STAT_y','epoc','lat_ref','lon_ref','h_ref','lat_rov','lon_rov','h_rov']].copy()
+            coord_res = coord_res.rename(index=str,columns={"STAT_x":"STAT_ref","STAT_y":"STAT_rov"})
+            
         #Extract standard ties
         grid = grid_met
         if coord_t == "kinematic":
-            diff_pd['stand_ties'] = diff_pd.apply(lambda x: gtro.calc_stand_ties(x['epoc'],x.lat_ref , x.lon_ref , x.h_ref,x.lat_rov , x.lon_rov , x.h_rov,grid),axis=1)
-        else:
-            diff_pd['stand_ties'] = diff_pd.apply(lambda x: gtro.calc_stand_ties(x['epoc'],lat_ref , lon_ref , h_ref,lat_rov , lon_rov , h_rov,grid),axis=1)
-            
+            diff_pd['stand_ties'] = diff_pd.apply(lambda x: gtro.calc_stand_ties(x['epoc'], x.lat_ref , x.lon_ref , x.h_ref,x.lat_rov , x.lon_rov , x.h_rov,grid),axis=1)
+        elif coord_t == "static":
+            diff_pd['stand_ties'] = diff_pd.apply(lambda x: gtro.calc_stand_ties(x['epoc'], float(lat_ref) , float(lon_ref) , float(h_ref) , float(lat_rov) , float(lon_rov) , float(h_rov),grid),axis=1)
+        
+       
         diff_pd['Trop_ties_corr'] = diff_pd.apply(lambda x: x['tro_x'] - (x['tro_y']+x['stand_ties']),axis=1)
         
     #drop unnecessary column
-    diff_pd = diff_pd.drop(['tro_x', 'stro_x', 'tgn_x', 'stgn_x', 'tge_x', 'stge_x','tro_y', 'stro_y', 'tgn_y', 'stgn_y', 'tge_y','stge_y','lat_ref','lon_ref','h_ref','lat_rov','lon_rov','h_rov'],axis=1)
+    if coord_t == "kinematic":
+        diff_pd = diff_pd.drop(['tro_x', 'stro_x', 'tgn_x', 'stgn_x', 'tge_x', 'stge_x','tro_y', 'stro_y', 'tgn_y', 'stgn_y', 'tge_y','stge_y','lat_ref','lon_ref','h_ref','lat_rov','lon_rov','h_rov'],axis=1)
+    else:
+        diff_pd = diff_pd.drop(['tro_x', 'stro_x', 'tgn_x', 'stgn_x', 'tge_x', 'stge_x','tro_y', 'stro_y', 'tgn_y', 'stgn_y', 'tge_y','stge_y'],axis=1)
     
     #Change column name of station
     diff_pd = diff_pd.rename(index=str,columns={"STAT_x":"STAT_ref","STAT_y":"STAT_rov"})
 
-    return diff_pd
+    return diff_pd,coord_res
 
 def stat_summary_trop_ties(df):
     wmean_no_ties = np.round(np.average(df.Trop_ties,weights = 1/df.STrop_ties),3)
