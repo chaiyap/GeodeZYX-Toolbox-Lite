@@ -5130,6 +5130,10 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
         trop_pd = gfc.read_snx_trop(input_file)
     elif mode == "DF":
         trop_pd = input_file
+    else:
+        import sys
+        print("No this option for troposphere solution")
+        sys.exit()
         
     trop_ref = trop_pd[trop_pd.STAT == STA1]
     trop_rov = trop_pd[trop_pd.STAT == STA2]
@@ -5163,8 +5167,9 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
     if apply_ties == True:
         
         if isinstance(grid_met,str):
+            import sys
             print("Please read grid file before use this function")
-            return None,None
+            sys.exit()
         
         if mode_coor == "epos" and coord_t == "static":
             coord = read_epos_sta_coords_mono(coord_file)
@@ -5230,7 +5235,10 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
             #Merge coordinates results
             coord_res = diff_pd[['STAT_x','STAT_y','epoc','lat_ref','lon_ref','h_ref','lat_rov','lon_rov','h_rov']].copy()
             coord_res = coord_res.rename(index=str,columns={"STAT_x":"STAT_ref","STAT_y":"STAT_rov"})
-            
+        else:
+            import sys
+            print("No this option for coordinates")
+            sys.exit()
         #Extract standard ties
         grid = grid_met
         if coord_t == "kinematic":
