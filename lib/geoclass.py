@@ -1603,6 +1603,7 @@ def read_epos_sta_kinematics(filein):
             namstat = fields[2]
             numstat = int(fields[1])
             MJD_epo = float(fields[3])
+            numobs = int(fields[4])
             
             X = float(fields[6])
             Y = float(fields[7])
@@ -1618,12 +1619,12 @@ def read_epos_sta_kinematics(filein):
             sE = float(fields[19])
             sU = float(fields[20])
             
-            tup_4_df = (namstat,numstat,MJD_epo,X,Y,Z,sX,sY,sZ,
+            tup_4_df = (namstat,numstat,MJD_epo,numobs,X,Y,Z,sX,sY,sZ,
                         N,E,U,sN,sE,sU)
             Lines_4_DF_stk.append(tup_4_df)
             
     columns = ("site","site_num",
-                   "MJD_epo",
+                   "MJD_epo","numobs",
                    "x","y","z","sx","sy","sz",
                    "N","E","U","sN","sE","sU")
     
