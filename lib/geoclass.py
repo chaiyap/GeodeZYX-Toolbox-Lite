@@ -1597,9 +1597,9 @@ def read_epos_sta_kinematics(filein):
     Lines_4_DF_stk = []
     for l in F:
         fields = l.split()
-        if l[0] != "K":
+        if l[0] != "K" and l[0] != "U" and l[0] != "X":
             continue
-        if l[0] == "K":
+        if l[0] == "K" or l[0] == "U" or l[0] == "X":
             namstat = fields[2]
             numstat = int(fields[1])
             MJD_epo = float(fields[3])
@@ -5232,10 +5232,14 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
             
             diff_pd['lat_ref'] , diff_pd['lon_ref'] , diff_pd['h_ref'] = lat_ref , lon_ref , h_ref
             diff_pd['lat_rov'] , diff_pd['lon_rov'] , diff_pd['h_rov'] = lat_rov , lon_rov , h_rov
+            diff_pd['num_obs_ref'] = coord_ref.numobs.values
+            diff_pd['num_obs_rov'] = coord_rov.numobs.values
             
             #Merge coordinates results
             coord_res = diff_pd[['STAT_x','STAT_y','epoc','lat_ref','lon_ref','h_ref','lat_rov','lon_rov','h_rov']].copy()
             coord_res = coord_res.rename(index=str,columns={"STAT_x":"STAT_ref","STAT_y":"STAT_rov"})
+            
+           
         else:
             import sys
             print("No this option for coordinates")
@@ -5269,25 +5273,28 @@ def stat_summary_trop_ties(df):
     
     return [wmean_no_ties,wmean_wt_ties,rms_mean_no_ties,rms_mean_wt_ties]
 
-def plot_trop_ties(df,ref_sta,rov_sta,analy_coor=False,df_coord="",savePlot=False,filePath="",fileName=""):
+def plot_trop_ties(df,ref_sta,rov_sta,analy_coor=False,analy_num_obs=False,df_coord="",savePlot=False,filePath="",fileName=""):
     """
     Plot tropospheric ties function
     Input:
         df : DataFrame from "compare_trop_ties" function
         ref_sta : Refernce station
         rov_sta : Rover station
-        analy_coor : Add height difference information
+        analy_coor : Add height difference information from "compare_trop_ties"
+        analy_num_obs : Add plot number of observation from "compare_trop_ties"
         df_coord : list of height difference
         savePlot : save figure
         filePath : Directory to save
         fileName : Filename of figure
     """
     epo_plt = geok.dt2year_decimal(df.epoc)
-    
+    h_diff = df_coord.h_ref - df_coord.h_rov
     if analy_coor:
-        fig, ax = plt.subplots(2,1,sharex=True)
+        
+        fig, ax = plt.subplots(3,1,sharex=True)
         axA = ax[0]
         axB = ax[1]
+        axC = ax[2]
         axA.plot(epo_plt,df.Trop_ties , marker="P",linestyle="--",label="Trop.ties")
         axA.plot(np.unique(epo_plt), np.poly1d(np.polyfit(epo_plt, df.Trop_ties, 1))(np.unique(epo_plt)),label="Trop. ties fitline")
         if 'Trop_ties_corr' in df.columns:
@@ -5299,16 +5306,29 @@ def plot_trop_ties(df,ref_sta,rov_sta,analy_coor=False,df_coord="",savePlot=Fals
         axA.set_xlabel("Time")
         axA.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
         
-        axB.plot(epo_plt,df_coord,marker="P",linestyle="--",label="Height difference")
-        axB.plot(np.unique(epo_plt), np.poly1d(np.polyfit(epo_plt, df_coord, 1))(np.unique(epo_plt)),label="Height diff. fitline")
+        axB.plot(epo_plt,h_diff,marker="P",linestyle="--",label="Height difference")
+        axB.plot(np.unique(epo_plt), np.poly1d(np.polyfit(epo_plt, h_diff, 1))(np.unique(epo_plt)),label="Height diff. fitline")
         axB.grid()
         axB.legend()
         axB.set_ylabel("Height difference (m)")
         axB.set_xlabel("Time")
         axB.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
+        if analy_num_obs:
+            if len(epo_plt) != len(df.num_obs_ref):
+                print("No plot number of observations")
+                fig.delaxes(axC)
+            else:
+                axC.scatter(epo_plt,df.num_obs_ref,label="Num obs. Ref sta")
+                axC.scatter(epo_plt,df.num_obs_rov,label="Num obs. Rov sta")
+                axC.grid()
+                axC.legend()
+                axC.set_ylabel("Num Obs.")
+                axC.set_xlabel("Time")
+                axC.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
     else:
-        fig , ax = plt.subplots(1,1)
-        axA = ax
+        fig , ax = plt.subplots(2,1,sharex=True)
+        axA = ax[0]
+        axC = ax[1]
         axA.plot(epo_plt,df.Trop_ties , marker="P",linestyle="--",label="Trop.ties")
         axA.plot(np.unique(epo_plt), np.poly1d(np.polyfit(epo_plt, df.Trop_ties, 1))(np.unique(epo_plt)),label="Trop. ties fitline")
         if 'Trop_ties_corr' in df.columns:
@@ -5319,7 +5339,19 @@ def plot_trop_ties(df,ref_sta,rov_sta,analy_coor=False,df_coord="",savePlot=Fals
         axA.set_ylabel("Trop. ties (mm)")
         axA.set_xlabel("Time")
         axA.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
-    
+        
+        if analy_num_obs:
+            if len(epo_plt) != len(df.num_obs_ref):
+                print("No plot number of observations")
+                fig.delaxes(axC)
+            else:
+                axC.scatter(epo_plt,df.num_obs_ref,label="Num obs. Ref sta")
+                axC.scatter(epo_plt,df.num_obs_rov,label="Num obs. Rov sta")
+                axC.grid()
+                axC.legend()
+                axC.set_ylabel("Num Obs.")
+                axC.set_xlabel("Time")
+                axC.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
     
     plt.tight_layout()
     plt.suptitle("Total delay ties of " + ref_sta + "-" + rov_sta)
