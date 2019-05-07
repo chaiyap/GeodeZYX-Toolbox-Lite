@@ -5232,19 +5232,16 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
             
             diff_pd['lat_ref'] , diff_pd['lon_ref'] , diff_pd['h_ref'] = lat_ref , lon_ref , h_ref
             diff_pd['lat_rov'] , diff_pd['lon_rov'] , diff_pd['h_rov'] = lat_rov , lon_rov , h_rov
-            diff_pd['num_obs_ref'] = coord_ref.numobs.values
-            diff_pd['num_obs_rov'] = coord_rov.numobs.values
-            
+           
             #Merge coordinates results
             coord_res = diff_pd[['STAT_x','STAT_y','epoc','lat_ref','lon_ref','h_ref','lat_rov','lon_rov','h_rov']].copy()
             coord_res = coord_res.rename(index=str,columns={"STAT_x":"STAT_ref","STAT_y":"STAT_rov"})
-            
-           
         else:
             import sys
             print("No this option for coordinates")
             sys.exit()
         #Extract standard ties
+        
         grid = grid_met
         if coord_t == "kinematic":
             diff_pd['stand_ties'] = diff_pd.apply(lambda x: gtro.calc_stand_ties(x['epoc'], x.lat_ref , x.lon_ref , x.h_ref,x.lat_rov , x.lon_rov , x.h_rov,grid),axis=1)
@@ -5318,8 +5315,8 @@ def plot_trop_ties(df,ref_sta,rov_sta,analy_coor=False,analy_num_obs=False,df_co
                 print("No plot number of observations")
                 fig.delaxes(axC)
             else:
-                axC.scatter(epo_plt,df.num_obs_ref,label="Num obs. Ref sta")
-                axC.scatter(epo_plt,df.num_obs_rov,label="Num obs. Rov sta")
+                axC.plot(epo_plt,df.num_obs_ref,marker="P",linestyle="--",label="Num obs. Ref sta")
+                axC.plot(epo_plt,df.num_obs_rov,marker="*",linestyle="-.",label="Num obs. Rov sta")
                 axC.grid()
                 axC.legend()
                 axC.set_ylabel("Num Obs.")
@@ -5345,8 +5342,8 @@ def plot_trop_ties(df,ref_sta,rov_sta,analy_coor=False,analy_num_obs=False,df_co
                 print("No plot number of observations")
                 fig.delaxes(axC)
             else:
-                axC.scatter(epo_plt,df.num_obs_ref,label="Num obs. Ref sta")
-                axC.scatter(epo_plt,df.num_obs_rov,label="Num obs. Rov sta")
+                axC.plot(epo_plt,df.num_obs_ref,marker="P",linestyle="--",label="Num obs. Ref sta")
+                axC.plot(epo_plt,df.num_obs_rov,marker="*",linestyle="-.",label="Num obs. Rov sta")
                 axC.grid()
                 axC.legend()
                 axC.set_ylabel("Num Obs.")
