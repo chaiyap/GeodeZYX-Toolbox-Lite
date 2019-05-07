@@ -5289,8 +5289,10 @@ def plot_trop_ties(df,ref_sta,rov_sta,analy_coor=False,df_coord="",savePlot=Fals
         axA = ax[0]
         axB = ax[1]
         axA.plot(epo_plt,df.Trop_ties , marker="P",linestyle="--",label="Trop.ties")
+        axA.plot(np.unique(epo_plt), np.poly1d(np.polyfit(epo_plt, df.Trop_ties, 1))(np.unique(epo_plt)),label="Trop. ties fitline")
         if 'Trop_ties_corr' in df.columns:
             axA.plot(epo_plt,df.Trop_ties_corr,marker="*",linestyle="-.",label="Trop. ties apply height corr.")
+            axA.plot(np.unique(epo_plt), np.poly1d(np.polyfit(epo_plt, df.Trop_ties_corr, 1))(np.unique(epo_plt)),label="Trop. ties apply height fitline")
         axA.grid()
         axA.legend()
         axA.set_ylabel("Trop. ties (mm)")
@@ -5298,6 +5300,7 @@ def plot_trop_ties(df,ref_sta,rov_sta,analy_coor=False,df_coord="",savePlot=Fals
         axA.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
         
         axB.plot(epo_plt,df_coord,marker="P",linestyle="--",label="Height difference")
+        axB.plot(np.unique(epo_plt), np.poly1d(np.polyfit(epo_plt, df_coord, 1))(np.unique(epo_plt)),label="Height diff. fitline")
         axB.grid()
         axB.legend()
         axB.set_ylabel("Height difference (m)")
@@ -5307,8 +5310,10 @@ def plot_trop_ties(df,ref_sta,rov_sta,analy_coor=False,df_coord="",savePlot=Fals
         fig , ax = plt.subplots(1,1)
         axA = ax
         axA.plot(epo_plt,df.Trop_ties , marker="P",linestyle="--",label="Trop.ties")
+        axA.plot(np.unique(epo_plt), np.poly1d(np.polyfit(epo_plt, df.Trop_ties, 1))(np.unique(epo_plt)),label="Trop. ties fitline")
         if 'Trop_ties_corr' in df.columns:
             axA.plot(epo_plt,df.Trop_ties_corr,marker="*",linestyle="-.",label="Trop. ties apply height corr.")
+            axA.plot(np.unique(epo_plt), np.poly1d(np.polyfit(epo_plt, df.Trop_ties_corr, 1))(np.unique(epo_plt)),label="Trop. ties apply height fitline")
         axA.grid()
         axA.legend()
         axA.set_ylabel("Trop. ties (mm)")
