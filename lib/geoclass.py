@@ -5263,8 +5263,8 @@ def compare_trop_ties(input_file,STA1,STA2,coord_file="",grid_met="",apply_ties=
     return diff_pd,coord_res
 
 def stat_summary_trop_ties(df):
-    wmean_no_ties = np.round(np.average(df.Trop_ties,weights = 1/df.STrop_ties),3)
-    wmean_wt_ties = np.round(np.average(df.Trop_ties_corr,weights = 1/df.STrop_ties),3)
+    wmean_no_ties = np.round(np.average(df.Trop_ties,weights = 1/df.STrop_ties**2),3)
+    wmean_wt_ties = np.round(np.average(df.Trop_ties_corr,weights = 1/df.STrop_ties**2),3)
     rms_mean_no_ties = np.round(geok.rms_mean(df.Trop_ties),3)
     rms_mean_wt_ties = np.round(geok.rms_mean(df.Trop_ties_corr),3)
     
