@@ -11,9 +11,9 @@ GFZ, Potsdam, Germany
 (previously at Université de La Rochelle, France)
 email : pierre.sakic@gfz-potsdam.de
 
-Thanks a lot to the other contibutors, especially Valérie BALLU, and Gustavo MANSUR
+Thanks a lot to the other contibutors, especially Valérie Ballu, Gustavo Mansur, and Kitpracha "Na" Chaiyaporn
                                                                                           
-README Revision : 2019-04-06
+README Revision : 2019-04-18
 
 ########## INTRODUCTION
 
@@ -42,6 +42,7 @@ You have to install some annex Python libraries which are not installed per defa
 tabulate
 collections
 natsort
+sympy
 
 #### With the standard Python Interpreter of Ubuntu (most cases)
 
@@ -54,7 +55,7 @@ sudo pip3 -I -U install <name of the library above>
 conda update --all
 
 * Install the package in Anaconda
-conda install --all <name of the library above>
+conda install <name of the library above>
 
 
 ###### Main installation
