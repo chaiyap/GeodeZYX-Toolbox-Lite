@@ -5358,7 +5358,9 @@ def plot_trop_ties(df,ref_sta,rov_sta,analy_coor=False,analy_num_obs=False,df_co
                 axC.set_ylabel("Num Obs.")
                 axC.set_xlabel("Time")
                 axC.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
-    
+        else:
+            fig.delaxes(axC)
+            
     plt.tight_layout()
     plt.suptitle("Total delay ties of " + ref_sta + "-" + rov_sta)
     if savePlot:
