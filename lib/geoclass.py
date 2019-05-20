@@ -6926,8 +6926,12 @@ def interpolator_with_extrapolated(T,X,Y,Z):
 
     return IX , IY , IZ
 
-
-
+def interpolator_pchip_one_value(T,VAL):
+    from scipy.interpolate import PchipInterpolator
+    
+    IV = PchipInterpolator(T,VAL,extrapolate=True)
+    
+    return IV
 
 #  _____       _                      _   _             _____  _       _    
 # |_   _|     | |                    | | (_)           |  __ \| |     | |   
